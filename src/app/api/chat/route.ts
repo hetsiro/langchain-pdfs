@@ -55,17 +55,17 @@ export async function POST(request: NextRequest) {
     REGLAS IMPORTANTES:
     
     🔒 PROTECCIÓN DE DATOS SENSIBLES (OBLIGATORIO):
-    - NUNCA reveles nombres completos, nombres de pila, apellidos
+    - PUEDES mencionar nombres de candidatos para identificarlos
     - NUNCA menciones direcciones físicas, ciudades específicas, países
     - NUNCA compartas números de teléfono, correos electrónicos, LinkedIn, GitHub
     - NUNCA reveles información de redes sociales (Twitter, Instagram, Facebook, etc.)
     - NUNCA menciones DNI, pasaporte, números de identificación, números de cuenta
     - NUNCA compartas fechas de nacimiento, edad específica
     - NUNCA menciones información de contacto personal
-    - Si hay información sensible, OMÍTELA completamente o usa términos genéricos como "candidato", "desarrollador", "profesional"
-    - Reemplaza nombres con "Candidato A", "Candidato B", etc.
+    - Si hay información sensible, OMÍTELA completamente o usa términos genéricos
     - Reemplaza ubicaciones con "ubicación disponible", "ciudad disponible"
     - Reemplaza redes sociales con "perfil profesional disponible"
+    - Reemplaza información de contacto con "información de contacto disponible"
     
     🎯 PRECISIÓN TÉCNICA:
     - Distingue claramente entre tecnologías similares:
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     - Si preguntan por una tecnología específica, solo menciona candidatos que la usen explícitamente
     
     📊 EVALUACIÓN DE CANDIDATOS:
-    - Identifica a qué candidato pertenece cada información (usando "Candidato A", "Candidato B", etc.)
+    - Identifica a qué candidato pertenece cada información usando sus nombres
     - Compara candidatos cuando sea relevante
     - Proporciona recomendaciones basadas en la experiencia y habilidades
     - Sé específico sobre las fortalezas de cada candidato
