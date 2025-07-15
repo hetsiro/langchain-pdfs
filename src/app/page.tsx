@@ -35,7 +35,10 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCVs, setIsLoadingCVs] = useState(true); // Nuevo estado para loading de CVs
+  const [isGeneratingCV, setIsGeneratingCV] = useState(false);
   const [question, setQuestion] = useState('');
+  const [requirements, setRequirements] = useState('');
+  const [generatedCV, setGeneratedCV] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -221,6 +224,50 @@ export default function Home() {
     }
   };
 
+  const handleGenerateCV = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!requirements.trim() || files.length === 0) return;
+
+    setIsGeneratingCV(true);
+
+    try {
+      const response = await fetch('/api/generate-cv', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requirements: requirements,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setGeneratedCV(result.cv);
+        setMessages([{
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: '✅ CV generado exitosamente. Revisa la sección de CV generado.'
+        }]);
+      } else {
+        setMessages([{
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: `❌ Error: ${result.error}`
+        }]);
+      }
+    } catch {
+      setMessages([{
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: '❌ Error al generar CV'
+      }]);
+    } finally {
+      setIsGeneratingCV(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="flex-1 max-w-6xl mx-auto p-6 w-full">
@@ -372,6 +419,68 @@ export default function Home() {
                 Enviar
               </button>
             </form>
+          </div>
+        )}
+
+        {/* Generate CV Section */}
+        {files.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+            <h2 className="text-xl font-semibold mb-4 text-black">Generar CV del Mejor Candidato</h2>
+            
+            <form onSubmit={handleGenerateCV} className="mb-6">
+              <div className="mb-4">
+                <label htmlFor="requirements" className="block text-sm font-medium text-gray-700 mb-2">
+                  Requisitos del Puesto
+                </label>
+                <textarea
+                  id="requirements"
+                  value={requirements}
+                  onChange={(e) => setRequirements(e.target.value)}
+                  placeholder="Describe los requisitos del puesto, habilidades necesarias, experiencia requerida, etc."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  rows={4}
+                  disabled={isGeneratingCV}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!requirements.trim() || isGeneratingCV}
+                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isGeneratingCV ? 'Generando CV...' : 'Generar CV'}
+              </button>
+            </form>
+
+            {/* Generated CV Display */}
+            {generatedCV && (
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4 text-black">CV Generado</h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">{generatedCV}</pre>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedCV);
+                      setMessages([{
+                        id: Date.now().toString(),
+                        type: 'assistant',
+                        content: '✅ CV copiado al portapapeles'
+                      }]);
+                    }}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
+                  >
+                    Copiar CV
+                  </button>
+                  <button
+                    onClick={() => setGeneratedCV('')}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 cursor-pointer"
+                  >
+                    Limpiar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
