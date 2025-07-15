@@ -9,19 +9,26 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@langchain/community": "^0.3.48",
+    "@langchain/openai": "^0.5.18",
+    "@qdrant/js-client-rest": "^1.13.0",
+    "@types/multer": "^2.0.0",
+    "langchain": "^0.3.29",
+    "multer": "^2.0.1",
+    "next": "15.3.5",
+    "pdf-parse": "^1.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.3.5"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
