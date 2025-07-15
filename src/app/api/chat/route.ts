@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ChatOllama } from '@langchain/community/chat_models/ollama';
+import { ChatOpenAI } from '@langchain/openai';
 import { QdrantVectorStore } from '@langchain/community/vectorstores/qdrant';
 import { QdrantClient } from '@qdrant/js-client-rest';
-import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama';
+import { OpenAIEmbeddings } from '@langchain/openai';
 
 
 
@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Configura el vector store para buscar en Qdrant
-    const embeddings = new OllamaEmbeddings({
-      model: 'nomic-embed-text',
-      baseUrl: 'http://localhost:11434',
+    const embeddings = new OpenAIEmbeddings({
+      model: 'text-embedding-3-small',
+      openAIApiKey: process.env.OPENAI_API_KEY,
     });
 
     const vectorStore = new QdrantVectorStore(embeddings, {
@@ -39,10 +39,10 @@ export async function POST(request: NextRequest) {
 
     const context = similarDocs.map(doc => doc.pageContent).join('\n\n');
 
-    // Configurar el modelo de Ollama para chat
-    const model = new ChatOllama({
-      baseUrl: 'http://localhost:11434',
-      model: 'gemma3',
+    // Configurar el modelo de OpenAI para chat
+    const model = new ChatOpenAI({
+      model: 'gpt-4o-mini',
+      openAIApiKey: process.env.OPENAI_API_KEY,
       temperature: 0.7,
     });
 
@@ -52,11 +52,38 @@ export async function POST(request: NextRequest) {
     Basándote en el siguiente contexto de CVs de candidatos, responde la pregunta de manera clara y precisa.
     Si la información no está en el contexto, indícalo claramente.
     
-    IMPORTANTE: 
+    REGLAS IMPORTANTES:
+    
+    🔒 PROTECCIÓN DE DATOS SENSIBLES:
+    - NO reveles números de teléfono, direcciones físicas, correos electrónicos
+    - NO menciones información personal como DNI, pasaporte, números de cuenta
+    - NO compartas datos de contacto específicos
+    - Si hay información sensible, omítela o generalízala
+    
+    🎯 PRECISIÓN TÉCNICA:
+    - Distingue claramente entre tecnologías similares:
+      * Next.js (framework de React para SSR/SSG)
+      * Node.js (runtime de JavaScript para backend)
+      * React (librería de UI)
+      * Express.js (framework web para Node.js)
+      * TypeScript vs JavaScript
+    - Sé específico sobre versiones y frameworks cuando sea relevante
+    - No confundas tecnologías relacionadas pero diferentes
+    - Menciona el nivel de experiencia específico (básico, intermedio, avanzado, experto)
+    - Si preguntan por una tecnología específica, solo menciona candidatos que la usen explícitamente
+    
+    📊 EVALUACIÓN DE CANDIDATOS:
     - Identifica a qué candidato pertenece cada información
     - Compara candidatos cuando sea relevante
     - Proporciona recomendaciones basadas en la experiencia y habilidades
     - Sé específico sobre las fortalezas de cada candidato
+    - Menciona años de experiencia cuando esté disponible
+    
+    💡 FORMATO DE RESPUESTA:
+    - Usa viñetas para organizar la información
+    - Agrupa por candidato cuando sea apropiado
+    - Sé conciso pero completo
+    - Prioriza la información más relevante para la pregunta
 
     Contexto de los CVs:
     ${context}

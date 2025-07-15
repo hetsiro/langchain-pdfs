@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface MessageContentKwargs {
   kwargs: {
@@ -14,17 +14,50 @@ interface Message {
   content: string | MessageContentKwargs;
 }
 
+interface QdrantPoint {
+  id: string | number;
+  payload?: {
+    content?: string;
+    metadata?: {
+      fileName?: string;
+      pdfId?: string;
+      source?: string;
+    };
+  };
+}
+
 function hasKwargs(content: string | MessageContentKwargs): content is MessageContentKwargs {
   return typeof content === 'object' && content !== null && 'kwargs' in content;
 }
 
 export default function Home() {
-  const [files, setFiles] = useState<Array<{name: string, pdfId: string}>>([]);
+  const [files, setFiles] = useState<QdrantPoint[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCVs, setIsLoadingCVs] = useState(true); // Nuevo estado para loading de CVs
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Cargar CVs del vector store al montar el componente
+  useEffect(() => {
+    loadCVsFromVectorStore();
+  }, []);
+
+  const loadCVsFromVectorStore = async () => {
+    try {
+      setIsLoadingCVs(true); // Activar loading
+      const response = await fetch('/api/cvs');
+      const result = await response.json();
+      if (response.ok && result.cvs) {
+        setFiles(result.cvs); // Guardar los puntos tal cual
+      }
+    } catch (error) {
+      console.error('Error cargando CVs:', error);
+    } finally {
+      setIsLoadingCVs(false); // Desactivar loading
+    }
+  };
 
 
 
@@ -38,6 +71,10 @@ export default function Home() {
 
     setIsUploading(true);
     let uploadedCount = 0;
+    let failedCount = 0;
+    let duplicateCount = 0;
+    const successfulFiles = [];
+    const duplicateFiles = [];
 
     for (const file of pdfFiles) {
       const formData = new FormData();
@@ -52,24 +89,65 @@ export default function Home() {
         const result = await response.json();
 
         if (response.ok) {
-          setFiles(prev => [...prev, {
-            name: file.name,
-            pdfId: result.pdfId
-          }]);
-          uploadedCount++;
+          // Verificar si ya existe un CV con el mismo pdfId
+          const existingCV = files.find(f => f.payload?.metadata?.pdfId === result.pdfId);
+          if (!existingCV) {
+            setFiles(prev => [...prev, {
+              id: result.pdfId, // Usar el pdfId como ID
+              payload: {
+                metadata: {
+                  fileName: file.name,
+                  pdfId: result.pdfId
+                }
+              }
+            }]);
+            uploadedCount++;
+            successfulFiles.push(file.name);
+          } else {
+            console.log(`CV ya existe: ${file.name}`);
+          }
         } else {
-          console.error(`Error subiendo ${file.name}: ${result.error}`);
+          // Verificar si es un error de duplicado
+          if (response.status === 409) {
+            console.log(`CV ya existe: ${file.name}`);
+            duplicateCount++;
+            duplicateFiles.push(file.name);
+            // No contar como error, solo informar
+          } else {
+            const errorData = await response.json();
+            const errorMessage = errorData.error || `Error subiendo ${file.name}`;
+            console.error(`Error subiendo ${file.name}: ${errorMessage}`);
+            failedCount++;
+          }
         }
       } catch (error) {
         console.error(`Error subiendo ${file.name}:`, error);
+        failedCount++;
       }
     }
 
+    // Mostrar mensaje de resultado
+    let message = '';
     if (uploadedCount > 0) {
+      message += `✅ Se subieron ${uploadedCount} CVs exitosamente: ${successfulFiles.join(', ')}`;
+      // Recargar la lista de CVs desde el vector store
+      await loadCVsFromVectorStore();
+    }
+    if (duplicateCount > 0) {
+      message += `\n❌ ${duplicateCount} CVs ya se encuentran en la BD: ${duplicateFiles.join(', ')}`;
+    }
+    if (failedCount > 0) {
+      message += `\n❌ ${failedCount} archivos fallaron al subir.`;
+    }
+    if (uploadedCount === 0 && failedCount === 0 && duplicateCount === 0) {
+      message = 'ℹ️ No se encontraron archivos PDF válidos.';
+    }
+
+    if (message) {
       setMessages([{
         id: Date.now().toString(),
         type: 'assistant',
-        content: `✅ Se subieron ${uploadedCount} CVs exitosamente. Ahora puedes hacer consultas sobre los candidatos.`
+        content: message
       }]);
     }
 
@@ -144,21 +222,21 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-6">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-1 max-w-6xl mx-auto p-6 w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+          <h1 className="text-4xl font-bold text-black mb-2">
             Sistema de Gestión de CVs
           </h1>
-          <p className="text-gray-600">
+          <p className="text-black">
             Sube CVs y haz consultas inteligentes sobre los candidatos
           </p>
         </div>
 
         {/* File Upload Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Subir CVs</h2>
+          <h2 className="text-xl font-semibold mb-4 text-black">Subir CVs</h2>
           
           <div
             className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
@@ -184,36 +262,42 @@ export default function Home() {
             </div>
           </div>
           
-                      <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf"
-              multiple
-              onChange={(e) => {
-                const selectedFiles = e.target.files;
-                if (selectedFiles && selectedFiles.length > 0) {
-                  handleMultipleFileUpload(selectedFiles);
-                }
-              }}
-              className="hidden"
-            />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            multiple
+            onChange={(e) => {
+              const selectedFiles = e.target.files;
+              if (selectedFiles && selectedFiles.length > 0) {
+                handleMultipleFileUpload(selectedFiles);
+              }
+            }}
+            className="hidden"
+          />
         </div>
 
         {/* Lista de CVs */}
-        {files.length > 0 ? (
+        {isLoadingCVs ? (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">
-              CVs Subidos ({files.length})
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
+              <span className="text-gray-600">Cargando CVs...</span>
+            </div>
+          </div>
+        ) : files.length > 0 ? (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4 text-black">
+              CVs en la Base de Datos ({files.length})
             </h2>
             <div className="space-y-2">
               {files.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <svg className="h-5 w-5 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M9 12h6v-2H9v2zm0-4h6V6H9v2zm-2 4V6H5v6h2zm0 2v2h2v-2H7zm8 0v2h-2v-2h2z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-gray-800 font-medium">{file.name}</span>
-                  </div>
+                <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-800 font-medium">
+                    {typeof file.payload?.metadata?.fileName === 'string' 
+                      ? file.payload.metadata.fileName.split('-').slice(1).join('-').replace('.pdf', '') // Remover timestamp y extensión
+                      : 'Sin nombre'}
+                  </span>
                 </div>
               ))}
             </div>
@@ -233,7 +317,7 @@ export default function Home() {
         {/* Chat Section */}
         {files.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Consulta sobre los candidatos</h2>
+            <h2 className="text-xl font-semibold mb-4 text-black">Consulta sobre los candidatos</h2>
             
             {/* Messages */}
             <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
@@ -254,8 +338,6 @@ export default function Home() {
                         ? message.content.kwargs.content
                         : message.content}
                     </p>
-                    
-
                   </div>
                 </div>
               ))}
@@ -273,7 +355,7 @@ export default function Home() {
             </div>
 
             {/* Input Form */}
-            <form onSubmit={handleSubmit} className="flex gap-2">
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={question}
@@ -285,7 +367,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={!question.trim() || isLoading}
-                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer sm:w-auto w-full"
               >
                 Enviar
               </button>
@@ -293,6 +375,15 @@ export default function Home() {
           </div>
         )}
       </div>
+      
+      {/* Footer */}
+      <footer className="py-6 bg-gray-100 border-t">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <p className="text-gray-600 text-sm">
+            Creado por Cristóbal Fuentealba
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
