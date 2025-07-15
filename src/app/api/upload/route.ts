@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         ...doc.metadata,
         pdfId,
-        fileName: file.name,
+        fileName: `${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')}-${file.name.replace('.pdf', '')}`,
         contentHash, // Agregar hash del contenido
       },
     }));
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: 'PDF subido y procesado exitosamente',
-      fileName: file.name,
+      fileName: `${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')}-${file.name.replace('.pdf', '')}`,
       pdfId,
       documentCount: docs.length
     });
