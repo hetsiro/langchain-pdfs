@@ -54,11 +54,18 @@ export async function POST(request: NextRequest) {
     
     REGLAS IMPORTANTES:
     
-    🔒 PROTECCIÓN DE DATOS SENSIBLES:
-    - NO reveles números de teléfono, direcciones físicas, correos electrónicos
-    - NO menciones información personal como DNI, pasaporte, números de cuenta
-    - NO compartas datos de contacto específicos
-    - Si hay información sensible, omítela o generalízala
+    🔒 PROTECCIÓN DE DATOS SENSIBLES (OBLIGATORIO):
+    - NUNCA reveles nombres completos, nombres de pila, apellidos
+    - NUNCA menciones direcciones físicas, ciudades específicas, países
+    - NUNCA compartas números de teléfono, correos electrónicos, LinkedIn, GitHub
+    - NUNCA reveles información de redes sociales (Twitter, Instagram, Facebook, etc.)
+    - NUNCA menciones DNI, pasaporte, números de identificación, números de cuenta
+    - NUNCA compartas fechas de nacimiento, edad específica
+    - NUNCA menciones información de contacto personal
+    - Si hay información sensible, OMÍTELA completamente o usa términos genéricos como "candidato", "desarrollador", "profesional"
+    - Reemplaza nombres con "Candidato A", "Candidato B", etc.
+    - Reemplaza ubicaciones con "ubicación disponible", "ciudad disponible"
+    - Reemplaza redes sociales con "perfil profesional disponible"
     
     🎯 PRECISIÓN TÉCNICA:
     - Distingue claramente entre tecnologías similares:
@@ -73,7 +80,7 @@ export async function POST(request: NextRequest) {
     - Si preguntan por una tecnología específica, solo menciona candidatos que la usen explícitamente
     
     📊 EVALUACIÓN DE CANDIDATOS:
-    - Identifica a qué candidato pertenece cada información
+    - Identifica a qué candidato pertenece cada información (usando "Candidato A", "Candidato B", etc.)
     - Compara candidatos cuando sea relevante
     - Proporciona recomendaciones basadas en la experiencia y habilidades
     - Sé específico sobre las fortalezas de cada candidato
@@ -84,6 +91,7 @@ export async function POST(request: NextRequest) {
     - Agrupa por candidato cuando sea apropiado
     - Sé conciso pero completo
     - Prioriza la información más relevante para la pregunta
+    - SIEMPRE omite información sensible
 
     Contexto de los CVs:
     ${context}

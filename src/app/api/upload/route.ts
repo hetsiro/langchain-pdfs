@@ -3,6 +3,7 @@ import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { QdrantVectorStore } from '@langchain/community/vectorstores/qdrant';
 import { QdrantClient } from '@qdrant/js-client-rest';
+import { ChatOpenAI } from '@langchain/openai';
 import { randomUUID, createHash } from 'crypto';
 
 const qdrant = new QdrantClient({
@@ -39,6 +40,98 @@ export async function POST(request: NextRequest) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+
+    // Procesar el PDF para extraer contenido
+    const blob = new Blob([buffer], { type: 'application/pdf' });
+    const loader = new PDFLoader(blob);
+    const docs = await loader.load();
+
+    // Extraer el contenido del PDF
+    const pdfContent = docs.map(doc => doc.pageContent).join('\n');
+
+    // Validar que sea un CV usando IA
+    const model = new ChatOpenAI({
+      model: 'gpt-4o-mini',
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      temperature: 0.1,
+    });
+
+    const validationPrompt = `
+    Eres un experto en recursos humanos que valida documentos con criterios MUY ESTRICTOS.
+    
+    Analiza el siguiente contenido y determina si es un CV (Curriculum Vitae) válido.
+    
+    CONTENIDO DEL DOCUMENTO:
+    ${pdfContent.substring(0, 2000)} // Primeros 2000 caracteres para análisis
+    
+    CRITERIOS MUY ESTRICTOS PARA VALIDAR UN CV:
+    1. DEBE contener información personal clara (nombre completo, datos de contacto)
+    2. DEBE incluir experiencia laboral específica con fechas y empresas
+    3. DEBE mencionar educación formal (universidad, instituto, etc.)
+    4. DEBE listar habilidades técnicas o competencias profesionales
+    5. DEBE tener estructura de CV (no factura, reporte, carta, manual, etc.)
+    6. DEBE ser un documento profesional de presentación personal
+    
+    DOCUMENTOS QUE NO SON CVs (RECHAZAR):
+    - Facturas, boletas, comprobantes
+    - Reportes técnicos, manuales, documentación
+    - Cartas, memorandos, comunicaciones
+    - Contratos, acuerdos legales
+    - Presentaciones, diapositivas
+    - Cualquier documento que no sea un CV profesional
+    
+    Responde ÚNICAMENTE con:
+    - "ES_CV" si es definitivamente un CV válido
+    - "NO_ES_CV" si no es un CV válido
+    
+    Justificación: [explica brevemente por qué es o no es un CV]
+    `;
+
+    const validationResponse = await model.invoke(validationPrompt);
+    const validationResult = validationResponse.content as string;
+
+    // Log para debugging
+    console.log('=== VALIDACIÓN DE CV ===');
+    console.log('Contenido analizado:', pdfContent.substring(0, 500));
+    console.log('Respuesta de validación:', validationResult);
+
+    // Verificar si es un CV válido usando regex para mayor precisión
+    const isCV = /\bES_CV\b/.test(validationResult) && !/\bNO_ES_CV\b/.test(validationResult);
+    
+    if (!isCV) {
+      console.log('❌ Documento rechazado - No es un CV válido');
+      return NextResponse.json(
+        { error: 'El documento no parece ser un CV válido. Por favor, sube solo CVs profesionales.' },
+        { status: 400 }
+      );
+    }
+
+    console.log('✅ Documento validado como CV');
+
+    // Validación adicional: verificar palabras clave de CV
+    const cvKeywords = [
+      'experiencia', 'laboral', 'trabajo', 'empleo', 'cargo', 'puesto',
+      'educación', 'universidad', 'instituto', 'carrera', 'título',
+      'habilidades', 'competencias', 'tecnologías', 'herramientas',
+      'proyectos', 'logros', 'responsabilidades', 'funciones',
+      'formación', 'estudios', 'certificaciones', 'cursos'
+    ];
+
+    const contentLower = pdfContent.toLowerCase();
+    const foundKeywords = cvKeywords.filter(keyword => contentLower.includes(keyword));
+    
+    console.log('Palabras clave encontradas:', foundKeywords);
+    
+    // Si no encuentra suficientes palabras clave de CV, rechazar
+    if (foundKeywords.length < 3) {
+      console.log('❌ Documento rechazado - Insuficientes palabras clave de CV');
+      return NextResponse.json(
+        { error: 'El documento no contiene suficiente información de CV. Debe incluir experiencia, educación y habilidades.' },
+        { status: 400 }
+      );
+    }
+
+    console.log('✅ Validación de palabras clave exitosa');
 
     // Generar hash del contenido del PDF para comparación
     const contentHash = createHash('md5').update(buffer).digest('hex');
@@ -87,11 +180,6 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️ Error verificando duplicados:', error);
       // Continuar con la subida si no se puede verificar
     }
-
-    // Procesar el PDF directamente desde el buffer (sin escribir archivo temporal)
-    const blob = new Blob([buffer], { type: 'application/pdf' });
-    const loader = new PDFLoader(blob);
-    const docs = await loader.load();
 
     // Generar un ID único para el PDF
     const pdfId = randomUUID();
@@ -171,7 +259,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: 'PDF subido y procesado exitosamente',
+      message: 'CV subido y procesado exitosamente',
       fileName: `${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')}-${file.name.replace('.pdf', '')}`,
       pdfId,
       documentCount: docs.length

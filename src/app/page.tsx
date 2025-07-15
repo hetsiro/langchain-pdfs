@@ -35,10 +35,10 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCVs, setIsLoadingCVs] = useState(true); // Nuevo estado para loading de CVs
-  const [isGeneratingCV, setIsGeneratingCV] = useState(false);
+  const [isGeneratingCVFromJob, setIsGeneratingCVFromJob] = useState(false);
   const [question, setQuestion] = useState('');
-  const [requirements, setRequirements] = useState('');
-  const [generatedCV, setGeneratedCV] = useState('');
+  const [jobOffer, setJobOffer] = useState('');
+  const [generatedCVFromJob, setGeneratedCVFromJob] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -224,32 +224,48 @@ export default function Home() {
     }
   };
 
-  const handleGenerateCV = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!requirements.trim() || files.length === 0) return;
 
-    setIsGeneratingCV(true);
+
+  const handleGenerateCVFromJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!jobOffer.trim() || files.length === 0) return;
+
+    setIsGeneratingCVFromJob(true);
 
     try {
-      const response = await fetch('/api/generate-cv', {
+      const response = await fetch('/api/generate-cv-from-job', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          requirements: requirements,
+          jobOffer: jobOffer,
         }),
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        setGeneratedCV(result.cv);
-        setMessages([{
-          id: Date.now().toString(),
-          type: 'assistant',
-          content: '✅ CV generado exitosamente. Revisa la sección de CV generado.'
-        }]);
+        const cvContent = result.cv;
+        
+        // Verificar si la respuesta indica que no hay candidatos adecuados
+        if (cvContent.includes('NO SE ENCONTRÓ CANDIDATO ADECUADO') || 
+            cvContent.includes('INFORMACIÓN INSUFICIENTE EN LOS CVs') ||
+            cvContent.includes('NO SE ENCONTRARON CVs VÁLIDOS')) {
+          setGeneratedCVFromJob('');
+          setMessages([{
+            id: Date.now().toString(),
+            type: 'assistant',
+            content: `❌ ${cvContent}`
+          }]);
+        } else {
+          setGeneratedCVFromJob(cvContent);
+          setMessages([{
+            id: Date.now().toString(),
+            type: 'assistant',
+            content: '✅ Perfil ideal generado exitosamente. Revisa la sección de perfil ideal.'
+          }]);
+        }
       } else {
         setMessages([{
           id: Date.now().toString(),
@@ -261,10 +277,10 @@ export default function Home() {
       setMessages([{
         id: Date.now().toString(),
         type: 'assistant',
-        content: '❌ Error al generar CV'
+        content: '❌ Error al crear perfil ideal'
       }]);
     } finally {
-      setIsGeneratingCV(false);
+      setIsGeneratingCVFromJob(false);
     }
   };
 
@@ -422,58 +438,61 @@ export default function Home() {
           </div>
         )}
 
-        {/* Generate CV Section */}
+
+
+        {/* Generate CV from Job Offer Section */}
         {files.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-            <h2 className="text-xl font-semibold mb-4 text-black">Generar CV del Mejor Candidato</h2>
+            <h2 className="text-xl font-semibold mb-4 text-black">Crear Perfil Ideal según Oferta Laboral</h2>
+            <p className="text-gray-600 mb-4">Genera un CV completamente nuevo de un candidato ideal que se ajuste perfectamente a la oferta laboral.</p>
             
-            <form onSubmit={handleGenerateCV} className="mb-6">
+            <form onSubmit={handleGenerateCVFromJob} className="mb-6">
               <div className="mb-4">
-                <label htmlFor="requirements" className="block text-sm font-medium text-gray-700 mb-2">
-                  Requisitos del Puesto
+                <label htmlFor="jobOffer" className="block text-sm font-medium text-gray-700 mb-2">
+                  Oferta Laboral
                 </label>
                 <textarea
-                  id="requirements"
-                  value={requirements}
-                  onChange={(e) => setRequirements(e.target.value)}
-                  placeholder="Describe los requisitos del puesto, habilidades necesarias, experiencia requerida, etc."
+                  id="jobOffer"
+                  value={jobOffer}
+                  onChange={(e) => setJobOffer(e.target.value)}
+                  placeholder="Pega aquí la oferta laboral completa. Incluye requisitos, responsabilidades, tecnologías requeridas, experiencia necesaria, etc."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                  rows={4}
-                  disabled={isGeneratingCV}
+                  rows={6}
+                  disabled={isGeneratingCVFromJob}
                 />
               </div>
               <button
                 type="submit"
-                disabled={!requirements.trim() || isGeneratingCV}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                disabled={!jobOffer.trim() || isGeneratingCVFromJob}
+                className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                {isGeneratingCV ? 'Generando CV...' : 'Generar CV'}
+                {isGeneratingCVFromJob ? 'Creando Perfil Ideal...' : 'Crear Perfil Ideal'}
               </button>
             </form>
 
-            {/* Generated CV Display */}
-            {generatedCV && (
+            {/* Generated CV from Job Display */}
+            {generatedCVFromJob && (
               <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4 text-black">CV Generado</h3>
+                <h3 className="text-lg font-semibold mb-4 text-black">Perfil Ideal Generado</h3>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">{generatedCV}</pre>
+                  <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">{generatedCVFromJob}</pre>
                 </div>
                 <div className="mt-4 flex gap-2">
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(generatedCV);
+                      navigator.clipboard.writeText(generatedCVFromJob);
                       setMessages([{
                         id: Date.now().toString(),
                         type: 'assistant',
-                        content: '✅ CV copiado al portapapeles'
+                        content: '✅ Perfil ideal copiado al portapapeles'
                       }]);
                     }}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
+                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 cursor-pointer"
                   >
-                    Copiar CV
+                    Copiar Perfil Ideal
                   </button>
                   <button
-                    onClick={() => setGeneratedCV('')}
+                    onClick={() => setGeneratedCVFromJob('')}
                     className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 cursor-pointer"
                   >
                     Limpiar
