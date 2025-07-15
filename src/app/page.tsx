@@ -36,9 +36,12 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCVs, setIsLoadingCVs] = useState(true); // Nuevo estado para loading de CVs
   const [isGeneratingCVFromJob, setIsGeneratingCVFromJob] = useState(false);
+  const [isDownloadingCV, setIsDownloadingCV] = useState(false);
   const [question, setQuestion] = useState('');
   const [jobOffer, setJobOffer] = useState('');
   const [generatedCVFromJob, setGeneratedCVFromJob] = useState('');
+  const [selectedCandidateName, setSelectedCandidateName] = useState('');
+  const [selectedAnalysis, setSelectedAnalysis] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -247,12 +250,16 @@ export default function Home() {
 
       if (response.ok) {
         const cvContent = result.cv;
+        const candidateName = result.candidateName || 'Candidato';
+        const analysis = result.analysis || '';
         
         // Verificar si la respuesta indica que no hay candidatos adecuados
         if (cvContent.includes('NO SE ENCONTRÓ CANDIDATO ADECUADO') || 
             cvContent.includes('INFORMACIÓN INSUFICIENTE EN LOS CVs') ||
             cvContent.includes('NO SE ENCONTRARON CVs VÁLIDOS')) {
           setGeneratedCVFromJob('');
+          setSelectedCandidateName('');
+          setSelectedAnalysis('');
           setMessages([{
             id: Date.now().toString(),
             type: 'assistant',
@@ -260,10 +267,12 @@ export default function Home() {
           }]);
         } else {
           setGeneratedCVFromJob(cvContent);
+          setSelectedCandidateName(candidateName);
+          setSelectedAnalysis(analysis);
           setMessages([{
             id: Date.now().toString(),
             type: 'assistant',
-            content: '✅ Perfil ideal generado exitosamente. Revisa la sección de perfil ideal.'
+            content: '✅ Mejor candidato encontrado exitosamente. Revisa la información del candidato.'
           }]);
         }
       } else {
@@ -277,10 +286,61 @@ export default function Home() {
       setMessages([{
         id: Date.now().toString(),
         type: 'assistant',
-        content: '❌ Error al crear perfil ideal'
+        content: '❌ Error al buscar el mejor candidato'
       }]);
     } finally {
       setIsGeneratingCVFromJob(false);
+    }
+  };
+
+  const handleDownloadCV = async (candidateName: string) => {
+    setIsDownloadingCV(true);
+
+    try {
+      const response = await fetch('/api/download-cv', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          candidateName: candidateName,
+          analysis: selectedAnalysis,
+        }),
+      });
+
+      if (response.ok) {
+        // Descargar el PDF
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `CV_${candidateName.replace(/\s+/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        setMessages([{
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: `✅ CV de ${candidateName} descargado exitosamente en formato PDF`
+        }]);
+      } else {
+        const result = await response.json();
+        setMessages([{
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: `❌ Error: ${result.error}`
+        }]);
+      }
+    } catch {
+      setMessages([{
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: '❌ Error al descargar CV'
+      }]);
+    } finally {
+      setIsDownloadingCV(false);
     }
   };
 
@@ -440,11 +500,11 @@ export default function Home() {
 
 
 
-        {/* Generate CV from Job Offer Section */}
+        {/* Search Candidates from Job Offer Section */}
         {files.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-            <h2 className="text-xl font-semibold mb-4 text-black">Crear Perfil Ideal según Oferta Laboral</h2>
-            <p className="text-gray-600 mb-4">Genera un CV completamente nuevo de un candidato ideal que se ajuste perfectamente a la oferta laboral.</p>
+            <h2 className="text-xl font-semibold mb-4 text-black">Buscar Mejor Candidato según Oferta Laboral</h2>
+            <p className="text-gray-600 mb-4">Encuentra al mejor candidato que se ajuste a los requisitos de la oferta laboral y descarga su CV en formato PDF.</p>
             
             <form onSubmit={handleGenerateCVFromJob} className="mb-6">
               <div className="mb-4">
@@ -466,14 +526,14 @@ export default function Home() {
                 disabled={!jobOffer.trim() || isGeneratingCVFromJob}
                 className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                {isGeneratingCVFromJob ? 'Creando Perfil Ideal...' : 'Crear Perfil Ideal'}
+                {isGeneratingCVFromJob ? 'Buscando Mejor Candidato...' : 'Buscar Mejor Candidato'}
               </button>
             </form>
 
-            {/* Generated CV from Job Display */}
+            {/* Search Results Display */}
             {generatedCVFromJob && (
               <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4 text-black">Perfil Ideal Generado</h3>
+                <h3 className="text-lg font-semibold mb-4 text-black">Mejor Candidato Encontrado</h3>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">{generatedCVFromJob}</pre>
                 </div>
@@ -484,15 +544,36 @@ export default function Home() {
                       setMessages([{
                         id: Date.now().toString(),
                         type: 'assistant',
-                        content: '✅ Perfil ideal copiado al portapapeles'
+                        content: '✅ Información del candidato copiada al portapapeles'
                       }]);
                     }}
                     className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 cursor-pointer"
                   >
-                    Copiar Perfil Ideal
+                    Copiar Información
                   </button>
                   <button
-                    onClick={() => setGeneratedCVFromJob('')}
+                    onClick={() => {
+                      if (selectedCandidateName) {
+                        handleDownloadCV(selectedCandidateName);
+                      } else {
+                        setMessages([{
+                          id: Date.now().toString(),
+                          type: 'assistant',
+                          content: '❌ No se pudo identificar el nombre del candidato para descargar'
+                        }]);
+                      }
+                    }}
+                    disabled={isDownloadingCV || !selectedCandidateName}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDownloadingCV ? 'Descargando CV...' : 'Descargar CV'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setGeneratedCVFromJob('');
+                      setSelectedCandidateName('');
+                      setSelectedAnalysis('');
+                    }}
                     className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 cursor-pointer"
                   >
                     Limpiar

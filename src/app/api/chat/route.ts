@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
     
     🔒 PROTECCIÓN DE DATOS SENSIBLES (OBLIGATORIO):
     - PUEDES mencionar nombres de candidatos para identificarlos
-    - NUNCA menciones direcciones físicas, ciudades específicas, países
-    - NUNCA compartas números de teléfono, correos electrónicos, LinkedIn, GitHub
+    - NUNCA menciones direcciones físicas, ciudades específicas, países, calles, números de casa
+    - NUNCA compartas números de teléfono, celulares, correos electrónicos, LinkedIn, GitHub
     - NUNCA reveles información de redes sociales (Twitter, Instagram, Facebook, etc.)
     - NUNCA menciones DNI, pasaporte, números de identificación, números de cuenta
     - NUNCA compartas fechas de nacimiento, edad específica
@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
     - Reemplaza ubicaciones con "ubicación disponible", "ciudad disponible"
     - Reemplaza redes sociales con "perfil profesional disponible"
     - Reemplaza información de contacto con "información de contacto disponible"
+    - Reemplaza números de celular con "información de contacto disponible"
     
     🎯 PRECISIÓN TÉCNICA:
     - Distingue claramente entre tecnologías similares:
