@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, unlink, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { QdrantVectorStore } from '@langchain/community/vectorstores/qdrant';
@@ -90,30 +88,13 @@ export async function POST(request: NextRequest) {
       // Continuar con la subida si no se puede verificar
     }
 
-    // Guardar el archivo temporalmente
-    const uploadDir = join(process.cwd(), 'uploads');
-    
-    // Crear la carpeta uploads si no existe
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (mkdirError) {
-      console.warn('⚠️ No se pudo crear carpeta uploads:', mkdirError);
-    }
-    
-    const fileName = `${Date.now()}-${file.name}`;
-    const filePath = join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
-
-    // Procesar el PDF y generar embeddings
-    const loader = new PDFLoader(filePath);
+    // Procesar el PDF directamente desde el buffer (sin escribir archivo temporal)
+    const blob = new Blob([buffer], { type: 'application/pdf' });
+    const loader = new PDFLoader(blob);
     const docs = await loader.load();
 
     // Generar un ID único para el PDF
     const pdfId = randomUUID();
-
-    // Mostrar ejemplo de la estructura original
-    console.log('=== DOCUMENTO ORIGINAL ===');
-    console.log('Primer documento:', JSON.stringify(docs[0], null, 2));
 
     // Función para limpiar información sensible
     const cleanSensitiveInfo = (text: string) => {
@@ -137,14 +118,10 @@ export async function POST(request: NextRequest) {
       metadata: {
         ...doc.metadata,
         pdfId,
-        fileName,
+        fileName: file.name,
         contentHash, // Agregar hash del contenido
       },
     }));
-
-    // Mostrar ejemplo de la estructura modificada
-    console.log('=== DOCUMENTO CON METADATA ===');
-    console.log('Primer documento con metadata:', JSON.stringify(docsWithMeta[0], null, 2));
 
     // Crear embeddings y guardar en Qdrant
     const embeddings = new OpenAIEmbeddings({
@@ -184,14 +161,6 @@ export async function POST(request: NextRequest) {
         }
       );
 
-      // Limpiar archivo temporal después de procesar
-      try {
-        await unlink(filePath);
-        console.log('✅ Archivo temporal eliminado:', fileName);
-      } catch (cleanupError) {
-        console.warn('⚠️ No se pudo eliminar archivo temporal:', cleanupError);
-      }
-
     } catch (vectorError) {
       console.error('Error guardando en Qdrant:', vectorError);
       const errorMessage = vectorError instanceof Error ? vectorError.message : 'Error desconocido';
@@ -203,7 +172,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: 'PDF subido y procesado exitosamente',
-      fileName,
+      fileName: file.name,
       pdfId,
       documentCount: docs.length
     });
