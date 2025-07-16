@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     ) || similarDocs[0];
 
     // Formatear el CV para PDF
-    const formattedCV = formatCVForPDF(candidateCV.pageContent, candidateName);
+    const formattedCV = formatCVForPDF(candidateCV.pageContent);
 
     // Generar PDF con Puppeteer
     const pdfBuffer = await generatePDF(formattedCV, candidateName, analysis || '');
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function formatCVForPDF(cvContent: string, candidateName: string): string {
+function formatCVForPDF(cvContent: string): string {
   // Limpiar y formatear el CV para PDF
   let formattedCV = cvContent;
   
