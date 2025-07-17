@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { showSuccessAlert, showErrorAlert, showInfoAlert } from '../utils/alerts';
 
 interface MessageContentKwargs {
   kwargs: {
@@ -71,7 +72,7 @@ export default function Home() {
     const pdfFiles = Array.from(uploadedFiles).filter(file => file.type === 'application/pdf');
     
     if (pdfFiles.length === 0) {
-      alert('No se encontraron archivos PDF válidos');
+      showErrorAlert('No se encontraron archivos PDF válidos');
       return;
     }
 
@@ -114,6 +115,7 @@ export default function Home() {
           }
         } else {
           // Verificar si es un error de duplicado
+          if(result.justificacion) showErrorAlert(result.justificacion);
           if (response.status === 409) {
             console.log(`CV ya existe: ${file.name}`);
             duplicateCount++;
@@ -132,29 +134,20 @@ export default function Home() {
       }
     }
 
-    // Mostrar mensaje de resultado
-    let message = '';
+    // Mostrar alertas de resultado
     if (uploadedCount > 0) {
-      message += `✅ Se subieron ${uploadedCount} CVs exitosamente: ${successfulFiles.join(', ')}`;
+      showSuccessAlert(`Se subieron ${uploadedCount} CVs exitosamente: ${successfulFiles.join(', ')}`);
       // Recargar la lista de CVs desde el vector store
       await loadCVsFromVectorStore();
     }
     if (duplicateCount > 0) {
-      message += `\n❌ ${duplicateCount} CVs ya se encuentran en la BD: ${duplicateFiles.join(', ')}`;
+      showInfoAlert(`${duplicateCount} CVs ya se encuentran en la BD: ${duplicateFiles.join(', ')}`);
     }
     if (failedCount > 0) {
-      message += `\n❌ ${failedCount} archivos fallaron al subir.`;
+      // showErrorAlert(`${failedCount} archivos fallaron al subir.`);
     }
     if (uploadedCount === 0 && failedCount === 0 && duplicateCount === 0) {
-      message = 'ℹ️ No se encontraron archivos PDF válidos.';
-    }
-
-    if (message) {
-      setMessages([{
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: message
-      }]);
+      showInfoAlert('No se encontraron archivos PDF válidos.');
     }
 
     setIsUploading(false);
@@ -208,20 +201,10 @@ export default function Home() {
         };
         setMessages(prev => [...prev, assistantMessage]);
       } else {
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: `❌ Error: ${result.error}`
-        };
-        setMessages(prev => [...prev, errorMessage]);
+        showErrorAlert(`Error: ${result.error}`);
       }
     } catch {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: '❌ Error al procesar la pregunta'
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      showErrorAlert('Error al procesar la pregunta');
     } finally {
       setIsLoading(false);
     }
@@ -265,29 +248,18 @@ export default function Home() {
             type: 'assistant',
             content: `❌ ${cvContent}`
           }]);
+          showErrorAlert(cvContent);
         } else {
           setGeneratedCVFromJob(cvContent);
           setSelectedCandidateName(candidateName);
           setSelectedAnalysis(analysis);
-          setMessages([{
-            id: Date.now().toString(),
-            type: 'assistant',
-            content: '✅ Mejor candidato encontrado exitosamente. Revisa la información del candidato.'
-          }]);
+          showSuccessAlert('Mejor candidato encontrado exitosamente. Revisa la información del candidato.');
         }
       } else {
-        setMessages([{
-          id: Date.now().toString(),
-          type: 'assistant',
-          content: `❌ Error: ${result.error}`
-        }]);
+        showErrorAlert(`Error: ${result.error}`);
       }
     } catch {
-      setMessages([{
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: '❌ Error al buscar el mejor candidato'
-      }]);
+      showErrorAlert('Error al buscar el mejor candidato');
     } finally {
       setIsGeneratingCVFromJob(false);
     }
@@ -320,25 +292,13 @@ export default function Home() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
-        setMessages([{
-          id: Date.now().toString(),
-          type: 'assistant',
-          content: `✅ CV de ${candidateName} descargado exitosamente en formato PDF`
-        }]);
+        showSuccessAlert(`CV de ${candidateName} descargado exitosamente en formato PDF`);
       } else {
         const result = await response.json();
-        setMessages([{
-          id: Date.now().toString(),
-          type: 'assistant',
-          content: `❌ Error: ${result.error}`
-        }]);
+        showErrorAlert(`Error: ${result.error}`);
       }
     } catch {
-      setMessages([{
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: '❌ Error al descargar CV'
-      }]);
+      showErrorAlert('Error al descargar CV');
     } finally {
       setIsDownloadingCV(false);
     }
@@ -541,11 +501,7 @@ export default function Home() {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(generatedCVFromJob);
-                      setMessages([{
-                        id: Date.now().toString(),
-                        type: 'assistant',
-                        content: '✅ Información del candidato copiada al portapapeles'
-                      }]);
+                      showSuccessAlert('Información del candidato copiada al portapapeles');
                     }}
                     className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 cursor-pointer"
                   >
@@ -556,11 +512,7 @@ export default function Home() {
                       if (selectedCandidateName) {
                         handleDownloadCV(selectedCandidateName);
                       } else {
-                        setMessages([{
-                          id: Date.now().toString(),
-                          type: 'assistant',
-                          content: '❌ No se pudo identificar el nombre del candidato para descargar'
-                        }]);
+                        showErrorAlert('No se pudo identificar el nombre del candidato para descargar');
                       }
                     }}
                     disabled={isDownloadingCV || !selectedCandidateName}

@@ -111,15 +111,12 @@ export async function POST(request: NextRequest) {
     
     SELECCIONA EL MEJOR CANDIDATO y muestra su CV completo con análisis de compatibilidad:
     
-    FORMATO DE RESPUESTA:
+    FORMATO DE RESPUESTA OBLIGATORIO:
     
-    NOMBRE DEL CANDIDATO
+    NOMBRE DEL CANDIDATO: [Nombre completo del candidato seleccionado]
     
-    AJUSTE A LOS REQUISITOS
-    - Qué tan bien se ajusta a los requisitos específicos de la oferta
-    - Fortalezas principales relacionadas con el puesto
-    - Limitaciones o áreas de mejora (si las hay)
-    - Recomendación final
+    AJUSTE A LOS REQUISITOS:
+    - Compatibilidad con los requisitos específicos
     
     CV COMPLETO DEL CANDIDATO
     - Información personal (sin datos sensibles)
