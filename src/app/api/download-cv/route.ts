@@ -3,6 +3,8 @@ import { QdrantVectorStore } from '@langchain/community/vectorstores/qdrant';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import puppeteer from 'puppeteer';
+import puppeteerCore from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 const qdrant = new QdrantClient({
   url: process.env.QDRANT_URL!,
@@ -103,10 +105,20 @@ function formatCVForPDF(cvContent: string): string {
 }
 
 async function generatePDF(cvContent: string, candidateName: string, analysis: string): Promise<Buffer> {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+  let browser;
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+    const executablePath = await chromium.executablePath();
+    browser = await puppeteerCore.launch({
+      args: chromium.args,
+      executablePath,
+      headless: true,
+    });
+  } else {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+  }
 
   try {
     const page = await browser.newPage();

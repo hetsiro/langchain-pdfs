@@ -17,6 +17,9 @@ importers:
       '@qdrant/js-client-rest':
         specifier: ^1.13.0
         version: 1.14.1(typescript@5.8.3)
+      '@sparticuz/chromium':
+        specifier: ^138.0.1
+        version: 138.0.1
       '@types/multer':
         specifier: ^2.0.0
         version: 2.0.0
@@ -41,6 +44,9 @@ importers:
       puppeteer:
         specifier: ^24.13.0
         version: 24.13.0(typescript@5.8.3)
+      puppeteer-core:
+        specifier: ^24.14.0
+        version: 24.14.0
       react:
         specifier: ^19.0.0
         version: 19.1.0
@@ -857,6 +863,11 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  '@puppeteer/browsers@2.10.6':
+    resolution: {integrity: sha512-pHUn6ZRt39bP3698HFQlu2ZHCkS/lPcpv7fVQcGBSzNNygw171UXAKrCUhy+TEMw4lEttOKDgNpb04hwUAJeiQ==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   '@qdrant/js-client-rest@1.14.1':
     resolution: {integrity: sha512-CkCCTDc4gCXq+hhjB3yDw9Hs/PxCJ0bKqk/LjAAmuL9+nDm/RPue4C/tGOIMlzouTQ2l6J6t+JPeM//j38VFug==}
     engines: {node: '>=18.17.0', pnpm: '>=8'}
@@ -875,6 +886,10 @@ packages:
 
   '@sevinf/maybe@0.5.0':
     resolution: {integrity: sha512-ARhyoYDnY1LES3vYI0fiG6e9esWfTNcXcO6+MPJJXcnyMV3bim4lnFt45VXouV7y82F4x3YH8nOQ6VztuvUiWg==}
+
+  '@sparticuz/chromium@138.0.1':
+    resolution: {integrity: sha512-Ub58jeYFc/ePyWvVLqKzGE4/F/nL8KcsUHFNHNxDcqFogGTol4UHiwjZ8gLS4oGfbbT1ZPQHQ9hM3aBrqncBpQ==}
+    engines: {node: '>=20.11.0'}
 
   '@swc/counter@0.1.3':
     resolution: {integrity: sha512-e2BR4lsJkkRlKZ/qCHPw9ZaSxc0MVUd7gtbtaB7aMvHeJVYe8sOB8DBZkP2DtISHGSku9sCK6T6cnY0CtXrOCQ==}
@@ -1427,6 +1442,11 @@ packages:
 
   chromium-bidi@7.1.0:
     resolution: {integrity: sha512-UVYuuZfwi7AIiV+OWIRePZD6kX1bSNxoWjEsYG+Xkb97hzQIt9qnV662I5A6BAcdKO4bcZQVrkK/VhNHzFjNDg==}
+    peerDependencies:
+      devtools-protocol: '*'
+
+  chromium-bidi@7.1.1:
+    resolution: {integrity: sha512-L2BKQ0rSLADgbPMIdDh3wnYHs3EiUiMay2Sq0CTolheaADmWIf6Pe+T9LJRcnh5rcMz0U7MVk0cQVvKsGRMa1g==}
     peerDependencies:
       devtools-protocol: '*'
 
@@ -2727,6 +2747,10 @@ packages:
     resolution: {integrity: sha512-2Mr1zFCMfAJpKN5mRGqDAmwVEtS6qsalLnUZJn1uJxMdbZLMiqNuMf12gDmZGizg0CjvcfXxoaJhEZB8W0DXlw==}
     engines: {node: '>=18'}
 
+  puppeteer-core@24.14.0:
+    resolution: {integrity: sha512-NO9XpCl+i8oB0zJp81iPhzMo2QK8/JTj4ramSvTpGCo9CPCNo4AZ8qVOGpSgXzlcOfOT3VHOkzTfPo08GOE5jA==}
+    engines: {node: '>=18'}
+
   puppeteer@24.13.0:
     resolution: {integrity: sha512-3dpT7LIdlRBJBGKb7SjJeno/C3cl0bBpgwie+cxvf8PKmK502QdRU9TT/hvfchyFG7BzJKBHPxK5Boholx7zow==}
     engines: {node: '>=18'}
@@ -3655,6 +3679,19 @@ snapshots:
       - bare-buffer
       - supports-color
 
+  '@puppeteer/browsers@2.10.6':
+    dependencies:
+      debug: 4.4.1
+      extract-zip: 2.0.1
+      progress: 2.0.3
+      proxy-agent: 6.5.0
+      semver: 7.7.2
+      tar-fs: 3.1.0
+      yargs: 17.7.2
+    transitivePeerDependencies:
+      - bare-buffer
+      - supports-color
+
   '@qdrant/js-client-rest@1.14.1(typescript@5.8.3)':
     dependencies:
       '@qdrant/openapi-typescript-fetch': 1.2.6
@@ -3669,6 +3706,14 @@ snapshots:
   '@rushstack/eslint-patch@1.12.0': {}
 
   '@sevinf/maybe@0.5.0': {}
+
+  '@sparticuz/chromium@138.0.1':
+    dependencies:
+      follow-redirects: 1.15.9(debug@4.4.1)
+      tar-fs: 3.1.0
+    transitivePeerDependencies:
+      - bare-buffer
+      - debug
 
   '@swc/counter@0.1.3': {}
 
@@ -4123,7 +4168,7 @@ snapshots:
   axios@1.10.0(debug@4.4.1):
     dependencies:
       follow-redirects: 1.15.9(debug@4.4.1)
-      form-data: 4.0.0
+      form-data: 4.0.3
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
@@ -4224,6 +4269,12 @@ snapshots:
   chownr@3.0.0: {}
 
   chromium-bidi@7.1.0(devtools-protocol@0.0.1464554):
+    dependencies:
+      devtools-protocol: 0.0.1464554
+      mitt: 3.0.1
+      zod: 3.25.76
+
+  chromium-bidi@7.1.1(devtools-protocol@0.0.1464554):
     dependencies:
       devtools-protocol: 0.0.1464554
       mitt: 3.0.1
@@ -4959,7 +5010,7 @@ snapshots:
       isstream: 0.1.2
       jsonwebtoken: 9.0.2
       mime-types: 2.1.35
-      retry-axios: 2.6.0(axios@1.10.0(debug@4.4.1))
+      retry-axios: 2.6.0(axios@1.10.0)
       tough-cookie: 4.1.4
     transitivePeerDependencies:
       - supports-color
@@ -5673,6 +5724,20 @@ snapshots:
       - supports-color
       - utf-8-validate
 
+  puppeteer-core@24.14.0:
+    dependencies:
+      '@puppeteer/browsers': 2.10.6
+      chromium-bidi: 7.1.1(devtools-protocol@0.0.1464554)
+      debug: 4.4.1
+      devtools-protocol: 0.0.1464554
+      typed-query-selector: 2.12.0
+      ws: 8.18.3
+    transitivePeerDependencies:
+      - bare-buffer
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
   puppeteer@24.13.0(typescript@5.8.3):
     dependencies:
       '@puppeteer/browsers': 2.10.5
@@ -5759,7 +5824,7 @@ snapshots:
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
 
-  retry-axios@2.6.0(axios@1.10.0(debug@4.4.1)):
+  retry-axios@2.6.0(axios@1.10.0):
     dependencies:
       axios: 1.10.0(debug@4.4.1)
 

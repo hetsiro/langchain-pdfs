@@ -12,6 +12,7 @@
     "@langchain/community": "^0.3.48",
     "@langchain/openai": "^0.5.18",
     "@qdrant/js-client-rest": "^1.13.0",
+    "@sparticuz/chromium": "^138.0.1",
     "@types/multer": "^2.0.0",
     "dotenv": "^16.4.5",
     "langchain": "^0.3.29",
@@ -20,6 +21,7 @@
     "openai": "^4.62.1",
     "pdf-parse": "^1.1.1",
     "puppeteer": "^24.13.0",
+    "puppeteer-core": "^24.14.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
