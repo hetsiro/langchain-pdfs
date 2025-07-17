@@ -54,6 +54,13 @@ export async function POST(request: NextRequest) {
     
     REGLAS IMPORTANTES:
     
+    🎯 PRECISIÓN Y ESTRICTEZ:
+    - Responde SOLO con información específica y relevante
+    - Si preguntan por el MEJOR candidato, selecciona UNO solo
+    - NO hagas comparaciones extensas entre candidatos
+    - Sé directo y conciso en tus respuestas
+    - NO uses ** para enfatizar texto
+    
     🔒 PROTECCIÓN DE DATOS SENSIBLES (OBLIGATORIO):
     - PUEDES mencionar nombres de candidatos para identificarlos
     - NUNCA menciones direcciones físicas, ciudades específicas, países, calles, números de casa
@@ -62,11 +69,14 @@ export async function POST(request: NextRequest) {
     - NUNCA menciones DNI, pasaporte, números de identificación, números de cuenta
     - NUNCA compartas fechas de nacimiento, edad específica
     - NUNCA menciones información de contacto personal
-    - Si hay información sensible, OMÍTELA completamente o usa términos genéricos
-    - Reemplaza ubicaciones con "ubicación disponible", "ciudad disponible"
-    - Reemplaza redes sociales con "perfil profesional disponible"
-    - Reemplaza información de contacto con "información de contacto disponible"
-    - Reemplaza números de celular con "información de contacto disponible"
+    - CENSURA ESPECÍFICAMENTE:
+      * Direcciones chilenas como V Región, Quilpué, Valparaíso" → "Ubicación disponible"
+      * Números que empiecen con +56 o tengan 9 dígitos → "Información de contacto disponible"
+      * Cualquier dirección física → "Ubicación disponible"
+      * Cualquier número de teléfono/celular → "Información de contacto disponible"
+      * Cualquier email → "Información de contacto disponible"
+      * Cualquier red social → "Perfil profesional disponible"
+      * Si hay información sensible, OMÍTELA completamente o usa términos genéricos
     
     🎯 PRECISIÓN TÉCNICA:
     - Distingue claramente entre tecnologías similares:
@@ -93,6 +103,8 @@ export async function POST(request: NextRequest) {
     - Sé conciso pero completo
     - Prioriza la información más relevante para la pregunta
     - SIEMPRE omite información sensible
+    - NO uses ** para enfatizar texto
+    - Usa lenguaje directo y profesional
 
     Contexto de los CVs:
     ${context}

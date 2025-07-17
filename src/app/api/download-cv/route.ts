@@ -72,35 +72,9 @@ export async function POST(request: NextRequest) {
 }
 
 function formatCVForPDF(cvContent: string): string {
-  // Limpiar y formatear el CV para PDF
+  // Solo quitar los ** del análisis y dejar que la IA haga la censura
   let formattedCV = cvContent;
-  
-  // Reemplazar información sensible con formato específico
-  formattedCV = formattedCV.replace(/[\w\.-]+@[\w\.-]+\.\w+/g, '[EMAIL]');
-  formattedCV = formattedCV.replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[NÚMERO DE CELULAR]');
-  formattedCV = formattedCV.replace(/\b\d{2}[-.]?\d{2}[-.]?\d{2}[-.]?\d{2}[-.]?\d{2}\b/g, '[NÚMERO DE CELULAR]');
-  formattedCV = formattedCV.replace(/\b\d{9,10}\b/g, '[NÚMERO DE CELULAR]'); // Números de celular
-  formattedCV = formattedCV.replace(/\+\d{1,3}\s?\d{9,10}\b/g, '[NÚMERO DE CELULAR]'); // Números internacionales
-  
-  // Reemplazar direcciones más específicas (pero no porcentajes)
-  formattedCV = formattedCV.replace(/\b\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Way|Court|Ct|Place|Pl|Circle|Cir|Terrace|Ter)\b/gi, '[DIRECCIÓN]');
-  formattedCV = formattedCV.replace(/\b[A-Za-z\s]+\s\d{1,5}\s[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Way|Court|Ct|Place|Pl|Circle|Cir|Terrace|Ter)\b/gi, '[DIRECCIÓN]');
-  // Solo reemplazar direcciones que no terminen en %
-  formattedCV = formattedCV.replace(/\b([A-Za-z\s]+\s\d{1,5})\b(?!%)/gi, '[DIRECCIÓN]'); // Direcciones simples
-  formattedCV = formattedCV.replace(/\b([A-Za-z\s]+\s[A-Za-z\s]+\s\d{1,5})\b(?!%)/gi, '[DIRECCIÓN]'); // Direcciones con dos palabras
-  
-  // Reemplazar redes sociales con formato específico
-  formattedCV = formattedCV.replace(/linkedin\.com\/[^\s]+/gi, '[LINKEDIN]');
-  formattedCV = formattedCV.replace(/github\.com\/[^\s]+/gi, '[GITHUB]');
-  formattedCV = formattedCV.replace(/(?:twitter\.com|facebook\.com|instagram\.com)\/[^\s]+/gi, '[PERFIL PROFESIONAL]');
-  
-  // Quitar los ** del análisis
   formattedCV = formattedCV.replace(/\*\*/g, '');
-  
-  // Limpiar información de contacto que aparece debajo del nombre
-  formattedCV = formattedCV.replace(/([A-Za-z\s]+),\s*([A-Za-z\s]+),\s*([A-Za-z\s]+)\s*•\s*\[NÚMERO DE CELULAR\]\s*•\s*\[EMAIL\]\s*•\s*www\.\[LINKEDIN\]/g, '[DIRECCIÓN] * [NÚMERO DE CELULAR] * [EMAIL] * [LINKEDIN]');
-  formattedCV = formattedCV.replace(/([A-Za-z\s]+),\s*([A-Za-z\s]+),\s*([A-Za-z\s]+)\s*•\s*\[NÚMERO DE CELULAR\]\s*•\s*\[EMAIL\]\s*•\s*\[GITHUB\]/g, '[DIRECCIÓN] * [NÚMERO DE CELULAR] * [EMAIL] * [GITHUB]');
-  
   return formattedCV;
 }
 
