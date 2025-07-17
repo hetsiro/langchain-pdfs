@@ -5,7 +5,6 @@ import { QdrantVectorStore } from "@langchain/community/vectorstores/qdrant";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { ChatOpenAI } from "@langchain/openai";
 import { randomUUID, createHash } from "crypto";
-import { showErrorAlert } from "@/utils/alerts";
 
 const qdrant = new QdrantClient({
   url: process.env.QDRANT_URL,
